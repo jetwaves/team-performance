@@ -1,3 +1,8 @@
 var gitperf = require('./gitperf');
 
-gitperf.getGitLog();
+// gitperf.getGitLog();
+
+// gitperf.getBranchInfo('aaa');
+
+
+gitperf.getCommitSummary();

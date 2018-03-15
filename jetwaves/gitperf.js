@@ -17,46 +17,20 @@ var exec = require('child_process').exec;
 
 
 var tool = {
-    getGitLog   : getGitLog,
-    parseGitLog :   parseGitLog
+    getGitLog               : getGitLog,
+    parseGitLog             : parseGitLog,
+    getBranchInfo           : getBranchInfo,
+    getCommitSummary        : getCommitSummary
 };
 
 
-function echoGitLog(folderName, branchName, author, since, until ){
-    folderName = '/home/jetwaves/dev/posapi';
-    var tempFileName = 'gitLogTemp-' + moment().format('YMMDDHHmmssSSS') + '.txt';
-    var command = 'cd ' + folderName + ' && git log > ' + tempFileName;
-
-    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tcommand  = '+command );
-
-    var ls = exec(command, function (error, stdout, stderr) {
-        if (error !== null) {
-            return false;
-        }
-
-        setTimeout(function(){
-            console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss-SSS\t\t\t\t')+__filename);
-            var fileContent = fs.readFileSync(path.normalize(folderName + '//' + tempFileName));
-            // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
-            fileContent = fileContent.toString().split(os.EOL);
-            // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
-
-        },  1000);
-    });
-}
 
 
 function getGitLog(folderName, branchName, author, since, until ){
     return new Promise(
 function(resolve, reject){
-    folderName = '/home/jetwaves/dev/posapi';
-    // folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
-
-    // var tempFileName = 'gitlog.txt';
-    var tempFileName = 'gitLogTemp-' + moment().format('YMMDDHHmmssSSS') + '.txt';
-    var command = 'cd ' + folderName + ' && git log > ' + tempFileName;
-
-    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tcommand  = '+command );
+    var command, tempFileName;
+    [command, tempFileName]= makeGitLogCommandWithParams(folderName, branchName, author, since, until );
 
     async.waterfall(
             [function(callback){            // Execute the git command to redirect git log to a temp file.
@@ -90,22 +64,53 @@ function(resolve, reject){
 
                 console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
                 console.log('┏---- INFO: ----- start [authors @ ] -----');console.dir(authors);console.log('┗---- INFO: -----  end  [authors @ ] -----');
+                resolve({parseResult: parseResult, authors: authors});
             }
             ],
             function(err,result){
                 console.log('   .()       error !!.   err = ');console.dir(err);
                 console.log('       result = ');        console.dir(result);
-                res.json(err);
+                reject(err);
             }
         );
 });
 }
 
 
-function parseGitLog(logContent){
+function makeGitLogCommandWithParams(folderName, branchName, author, since, until ){
+    // folderName = '/home/jetwaves/dev/posapi';
+    // folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
 
+    var tempFileName = 'gitLogTemp-' + moment().format('YMMDDHHmmssSSS') + '.txt';
+    var command = 'cd ' + folderName ;      // 去项目目录
+
+    if(branchName) {                        // 切换到指定分支
+        command = command + ' && git checkout ' + branchName ;
+    }
+
+    command = command + ' && git log ';
+
+    if(author) {                            // 指定作者
+        command = command + ' --author=' + author;
+    }
+    if(since) {                             // 限定起始时间
+        command = command + ' --since=' + since;
+    }
+    if(until) {                             // 限定结束时间
+        command = command + ' --until=' + until;
+    }
+
+    command = command + ' > ' + tempFileName;   // 输出记录到临时文件
+
+    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tcommand  = '+command );
+
+    return [command, tempFileName];
+}
+
+
+function parseGitLog(logContent){
     var res = new Array();
-    var block = makeNewNullBlock();
+    var block = makeNewNullCommitBlock();
     var authors = new Array();
 
     for(var idx in logContent){
@@ -122,11 +127,11 @@ function parseGitLog(logContent){
                     block.msgArr = new Array();
                     res.push(block);
                     // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t ========= START OF A COMMIT BLOCK 02 ======  ');
-                    block = makeNewNullBlock();
+                    block = makeNewNullCommitBlock();
                     block.hash = arr[1];
                 } else {
                     // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t ========= START OF A COMMIT BLOCK 01 ======  ');
-                    block = makeNewNullBlock();
+                    block = makeNewNullCommitBlock();
                     block.hash = arr[1];
                 }
                 break;
@@ -137,30 +142,34 @@ function parseGitLog(logContent){
                 break;
             case 'Date: ':
                 var dateArr = line.split(':   ');
-                block.date = dateArr[1];
+                block.date = moment(dateArr[1]);
+                block.dateStr = dateArr[1];
                 break;
             case 'Merge:':
                 var mergeArr = line.split(': ');
                 block.merge = mergeArr[1];
+                authors = _.uniq(authors);          // eliminate duplication of users at every merge commit.
                 break;
             default:
                 block.msgArr.push(line);
         }
     }
-    // last block: end of the commit log
-    block.msg = block.msgArr.join(os.EOL);
+    block.msg = block.msgArr.join(os.EOL);      // last block: end of the commit log
     block.msgArr = new Array();
     res.push(block);
-    authors = _.uniq(authors);
+    authors = _.uniq(authors);          // eliminate duplications
     return [res, authors];
 }
 
-function makeNewNullBlock(){
+
+
+function makeNewNullCommitBlock(){
     var block = new Array();
     block.hash   = null;
     block.author = null;
     block.merge  = null;
     block.date   = null;
+    block.dateStr= null;
     block.msgArr = new Array();
     block.msg    = null;
     block.branch = null;
@@ -170,37 +179,70 @@ function makeNewNullBlock(){
 
 
 
-function getCurrentBranch(){
+function getBranchInfo(folderName){
+    return new Promise(
+function(resolve, reject){
+    // folderName = '/home/jetwaves/dev/posapi';
+    // folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
 
+
+    var command = 'cd ' + folderName + ' && git branch ';
+    var currentBranch = '';
+    var branchList = new Array();
+
+    exec(command, function (error, stdout, stderr) {
+        if (error !== null) {
+            reject(stderr);
+        }
+        stdout = stdout.split(os.EOL);
+        for(var idx in stdout){
+            var line = stdout[idx].trim();
+            if(!line) continue;
+            if(line.substr(0, 1).toString() == '*'){
+                line = line.substr(2);
+                currentBranch = line;
+            }
+            branchList.push(line);
+        }
+
+        resolve({currentBranch : currentBranch, branchList : branchList});
+    });
+
+});
 }
 
 
 
+// get a projects branches (local branches or branches in a supervised list ) commit summary
+function getCommitSummary(folderName, branchName, author, since, until ){
+    // folderName = '/home/jetwaves/dev/posapi';
+    folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
 
+    var historyArr = new Array()
+    var authors = new Array();
+    getBranchInfo(folderName).then(function(branchData){
+        console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+        console.log('┏---- INFO: ----- start [branchData.branchList @ ] -----');console.dir(branchData.branchList);console.log('┗---- INFO: -----  end  [branchData @ ] -----');
+        async.whilst(
+            function () { return branchData.branchList.length > 0; },
+            function (callback) {
+                var oneBranch = branchData.branchList.pop();
+                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Summarizing branch :   ' + oneBranch);
+                getGitLog(folderName, oneBranch, author, since, until ).then(function( commitData){
+                    historyArr.push(commitData.parseResult);
+                    authors.push(commitData.authors);
+                })
+            },
+            function (err, n) {
+                // 5 seconds have passed, n = 5
+                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\twhilst ERROR  ');
+            }
+        );
+        authors = _.uniq(authors);          // eliminate duplication of users at every merge commit.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return({commitHistory: historyArr, authors: authors});
+    });
+}
 
 
 
