@@ -52,7 +52,7 @@ function(resolve, reject){
             },
             function(res2, callback){
                 setTimeout(function(){
-                    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss-SSS\t\t\t\t')+__filename);
+                    // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss-SSS\t\t\t\t')+__filename);
                     let fileContent = fs.readFileSync(path.normalize(folderName + '//' + tempFileName));
                     fileContent = fileContent.toString().split(os.EOL);
                     // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
@@ -60,13 +60,14 @@ function(resolve, reject){
                 },  1000);
             },
             function(fileContent, callback){
+                fs.unlink(path.normalize(folderName + '//' + tempFileName),function(unlinkRes){});          // delete the temp file.
                 let parseResult, authors;
                 [parseResult, authors]= parseGitLog(fileContent, branchName, projectName);
-                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-                console.log('┏---- INFO: ----- start [parseResult @ ] -----');console.dir(parseResult);console.log('┗---- INFO: -----  end  [parseResult @ ] -----');
-
-                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-                console.log('┏---- INFO: ----- start [authors @ ] -----');console.dir(authors);console.log('┗---- INFO: -----  end  [authors @ ] -----');
+                // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+                // console.log('┏---- INFO: ----- start [parseResult @ ] -----');console.dir(parseResult);console.log('┗---- INFO: -----  end  [parseResult @ ] -----');
+                //
+                // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+                // console.log('┏---- INFO: ----- start [authors @ ] -----');console.dir(authors);console.log('┗---- INFO: -----  end  [authors @ ] -----');
                 resolve({parseResult: parseResult, authors: authors});
             }
             ],
@@ -81,8 +82,6 @@ function(resolve, reject){
 
 
 function makeGitLogCommandWithParams(folderName, branchName, author, since, until ){
-    // folderName = '/home/jetwaves/dev/posapi';
-    // folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
 
     let tempFileName = 'gitLogTemp-' + moment().format('YMMDDHHmmssSSS') + '.txt';
     let command = 'cd ' + folderName ;      // 去项目目录
@@ -90,7 +89,6 @@ function makeGitLogCommandWithParams(folderName, branchName, author, since, unti
     if(branchName) {                        // 切换到指定分支
         command = command + ' && git checkout ' + branchName ;
     }
-
     command = command + ' && git log ';
 
     if(author) {                            // 指定作者
@@ -104,9 +102,7 @@ function makeGitLogCommandWithParams(folderName, branchName, author, since, unti
     }
 
     command = command + ' > ' + tempFileName;   // 输出记录到临时文件
-
-    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tcommand  = '+command );
-
+    // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tcommand  = '+command );
     return [command, tempFileName];
 }
 
@@ -187,7 +183,11 @@ function makeNewNullCommitBlock(){
 
 
 
-
+/**
+ *  Get project branch information.
+ *      return branch name list in array and current branch.
+ *
+ */
 function getBranchInfo(folderName){
     return new Promise(
 function(resolve, reject){
@@ -220,7 +220,10 @@ function(resolve, reject){
 }
 
 
-
+/**
+ *  Get project information.  ( projectName for now )    http://github.com/jetwaves/PROJECT_NAME.git
+ *
+ */
 function getProjectInfo(folderName){
     return new Promise(
 function(resolve, reject){
@@ -290,12 +293,11 @@ getProjectInfo(folderName).then(function(projectInfo){
                 // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
                 // console.log('┏---- INFO: ----- start [authors @ ] -----');console.dir(authors);console.log('┗---- INFO: -----  end  [authors @ ] -----');
                 let ret = {commitHistory: historyArr, authors: authors};
-                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-                console.log('┏---- INFO: ----- start [ret @ ] -----');console.dir(ret);console.log('┗---- INFO: -----  end  [ret @ ] -----');
+                // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+                // console.log('┏---- INFO: ----- start [ret @ ] -----');console.dir(ret);console.log('┗---- INFO: -----  end  [ret @ ] -----');
                 resolve(ret);
             }
         );
-        // resolve ('xxxxxxxx');
 
     });
 });
@@ -303,6 +305,36 @@ getProjectInfo(folderName).then(function(projectInfo){
 })}
 
 
+/**
+ * get multi Projects' Commit Summary.
+ *
+ * RETURN:
+ *      data      JSON
+ *          data.commitHistory          array of commitHistory
+ *          data.authors                array of authors (commitors );
+ *
+ * commitHistory：
+ *
+ *  [
+ *    project: 'laravel-util.git',
+ *    branch: 'master',
+ *    date: null,
+ *    dateStr: 'Fri Feb 2 14:54:22 2018 +0800',
+ *    hash: '1e8ebd3e266e6b18539d1c8e208fc9c94680397a',
+ *    author: 'jetwaves@office <jetwaves@office>',
+ *    msgArr: [],
+ *    msg: '\n    initial commit\n',
+ *    merge: null
+ *  ],
+ *
+ * authors:
+ * [
+ *  'jetwaves <jetwaves@qq.com>',
+ *  'jetwaves@office <jetwaves@office>'
+ * ]
+ *
+ *
+ * */
 function getMultiProjectCommitSummary(folderNameArr, branchName, author, since, until ){
     return new Promise(
 function(resolve, reject){
