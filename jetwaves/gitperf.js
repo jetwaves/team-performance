@@ -6,14 +6,14 @@ const fs = require('fs');
 const path = require('path');
 const async = require('async');
 const moment = require('moment');
-// var Promise = require('promise');
 const _ = require('lodash');
 
-const readline = require('readline');
-const process = require('process');
 const os= require('os');
 
 const exec = require('child_process').exec;
+
+const Table = require('cli-table-redemption');
+
 
 
 var tool = {
@@ -23,6 +23,8 @@ var tool = {
     getProjectCommitSummary         : getProjectCommitSummary,
     getProjectInfo                  : getProjectInfo,
     getMultiProjectCommitSummary    : getMultiProjectCommitSummary,
+    commitHistoryTableRedemption    : commitHistoryTableRedemption,
+    authorsTableRedemption          : authorsTableRedemption
 };
 
 
@@ -89,7 +91,8 @@ function makeGitLogCommandWithParams(folderName, branchName, author, since, unti
     if(branchName) {                        // 切换到指定分支
         command = command + ' && git checkout ' + branchName ;
     }
-    command = command + ' && git log ';
+    // command = command + ' && git log  --date=rfc2822  ';
+    command = command + ' && git log  --date=iso-strict  ';
 
     if(author) {                            // 指定作者
         command = command + ' --author=' + author;
@@ -145,8 +148,8 @@ function parseGitLog(logContent, branchName, projectName ){
                 break;
             case 'Date: ':
                 let dateArr = line.split(':   ');
-                // block.date = moment(dateArr[1]);
                 block.dateStr = dateArr[1];
+                block.date = moment(dateArr[1]).format('X');
                 break;
             case 'Merge:':
                 let mergeArr = line.split(': ');
@@ -191,8 +194,6 @@ function makeNewNullCommitBlock(){
 function getBranchInfo(folderName){
     return new Promise(
 function(resolve, reject){
-    // folderName = '/home/jetwaves/dev/posapi';
-    // folderName = '/home/jetwaves/dev/__github/team-performance/jetwaves';
 
     let command = 'cd ' + folderName + ' && git branch ';
     let currentBranch = '';
@@ -378,6 +379,70 @@ function(resolve, reject){
 
 
 });
+}
+
+
+/**
+ *  Beautify the return content format
+ *
+ ┌──────────┬──────────┬────────────────┬──────────────────────────────┬────────────────────────────────────────┬──────────────────────────────┬──────────────────────────────────────────────────┬──────────┐
+ │ Project… │ BranchN… │ dateTS         │ dateSTR                      │ CommitHash                             │ author                       │ msg                                              │ merge    │
+ ├──────────┼──────────┼────────────────┼──────────────────────────────┼────────────────────────────────────────┼──────────────────────────────┼──────────────────────────────────────────────────┼──────────┤
+ │          │ dev      │                │ Thu Mar 15 11:26:49 2018 +0… │ 9e063863ba2d0ea8ddf6effb39995751c7408… │ jetwaves@office <jetwaves@o… │                                                  │          │
+ │          │          │                │                              │                                        │                              │     make a loop to summarize all local branches… │          │
+ │          │          │                │                              │                                        │                              │                                                  │          │
+ ├──────────┼──────────┼────────────────┼──────────────────────────────┼────────────────────────────────────────┼──────────────────────────────┼──────────────────────────────────────────────────┼──────────┤
+ │          │ dev      │                │ Wed Mar 14 18:54:58 2018 +0… │ 386c582b2fd8b685569c8f35074f932888bb3… │ jetwaves@office <jetwaves@o… │                                                  │          │
+ │          │          │                │                              │                                        │                              │     Now it can separate commit blocks and get c… │          │
+ │          │          │                │                              │                                        │                              │                                                  │          │
+ ├──────────┼──────────┼────────────────┼──────────────────────────────┼────────────────────────────────────────┼──────────────────────────────┼──────────────────────────────────────────────────┼──────────┤
+ │          │ dev      │                │ Mon Mar 12 19:05:55 2018 +0… │ 86d30fce41a2811144816aaf4bc0db18dc9ba… │ jetwaves@office <jetwaves@o… │                                                  │          │
+ │          │          │                │                              │                                        │                              │     now it can export git log into a temp txt f… │          │
+ │          │          │                │                              │                                        │                              │                                                  │          │
+ ├──────────┼──────────┼────────────────┼──────────────────────────────┼────────────────────────────────────────┼──────────────────────────────┼──────────────────────────────────────────────────┼──────────┤
+ │          │ dev      │                │ Sun Feb 11 22:20:40 2018 +0… │ 1cd5344d1e9c7c31043edf186edd0a54a3ea5… │ jetwaves <jetwaves@qq.com>   │                                                  │          │
+ │          │          │                │                              │                                        │                              │     Initial commit                               │          │
+ │          │          │                │                              │                                        │                              │                                                  │          │
+ └──────────┴──────────┴────────────────┴──────────────────────────────┴────────────────────────────────────────┴──────────────────────────────┴──────────────────────────────────────────────────┴──────────┘
+
+ *
+ *
+ * */
+function commitHistoryTableRedemption(commitHistoryArray ){
+    var table = new Table({
+        head:       ['ProjectName', 'BranchName','dateSTR','CommitHash','author', 'msg','merge'],
+        colWidths:  [10,            10,            20,       42,          20,      85,  12]
+    });
+
+    for(var idx in commitHistoryArray){
+        var item = commitHistoryArray[idx];
+        table.push([
+            item.project,
+            item.branch,
+            moment(item.dateStr).format('Y-MMDD HH:mm:ss'),
+            item.hash,
+            item.author,
+            item.msg,
+            item.merge
+        ]);
+    }
+    return table.toString();
+}
+
+
+function authorsTableRedemption(authors ){
+    var table = new Table({
+        head:       ['AuthorName'],
+        colWidths:  [50]
+    });
+
+    for(var idx in authors){
+        var item = authors[idx];
+        table.push([
+            item
+        ]);
+    }
+    return table.toString();
 }
 
 

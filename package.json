@@ -31,6 +31,9 @@
   "homepage": "https://github.com/jetwaves/team-performance#readme",
   "dependencies": {
     "async": "^2.6.0",
+    "chalk": "^2.3.2",
+    "cli-table-redemption": "^1.0.1",
+    "commander": "^2.15.0",
     "lodash": "^4.17.5",
     "moment": "^2.21.0",
     "promise": "^8.0.1"
