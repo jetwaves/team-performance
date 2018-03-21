@@ -3,13 +3,13 @@
 const moment  = require('moment');
 const os      = require('os');
 const log     = console.log;
-
+const _       = require('lodash');
+const fs       = require('fs');
 const chalk   = require('chalk');
-const args    = require('green').args;
-
 
 const gitperf = require('./gitperf');
 const pkg     = require('../package.json');
+
 
 // (async function (){
 //     let folders = [
@@ -47,11 +47,93 @@ const pkg     = require('../package.json');
  *
  *
  */
+var args = parseArgs(process.argv);
+
+if(args.help){
+    showHelp();
+    return ;
+}
 
 
 
-var help = args['-help'];
-if(help){
+
+var params = new Array();
+
+if(args.author) params.author = args.author;
+if(args.since)  params.since  = args.since;
+if(args.until)  params.until  = args.until;
+
+
+if(args.config){
+    if( !fileExist(args.config)){
+        console.log(chalk.red('ERROR: config file [' + args.config + '] does not exist .'));
+        return;
+    }
+    params.config = args.config;
+}
+
+console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+console.log('┏---- INFO: ----- start [params @ ] -----');console.dir(params);console.log('┗---- INFO: -----  end  [params @ ] -----');
+
+return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fileExist(fileFullName){
+    try{
+        fs.statSync(fileFullName);
+        return true;
+    }catch(err){
+        return false;
+    }
+}
+
+function parseArgs(args){
+    args.shift();
+    args.shift();           // eliminate the 'node' and 'cli.js' in the head
+    var ret = new Array();
+    for(var idx in args){
+        var arr = args[idx].split('=');
+        arr[0] = arr[0].replace('--', '');
+        arr[0] = arr[0].replace('-', '');
+        if(arr[1] === undefined ) arr[1] = true;
+        ret[arr[0]] = arr[1];
+    }
+    return ret;
+}
+
+function showHelp(){
     console.log('   ');
     console.log('                                   ' + chalk.bold.green('team-performance') + '');
     console.log('   ');
@@ -96,7 +178,6 @@ if(help){
     console.log('       --since          :  OPTIONAL  :  start date of analyse                         ');
     console.log('       --until          :  OPTIONAL  :  end date of analyse                           ');
     console.log('   ');
-    return ;
 }
 
 
