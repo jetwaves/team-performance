@@ -9,7 +9,7 @@
 const moment = require('moment');
 const os= require('os');
 
-var gitperf = require('../jetwaves/gitperf');
+var gitperf = require('../jetwaves/gitperfLib');
 
 (async function (){
     let folders = [

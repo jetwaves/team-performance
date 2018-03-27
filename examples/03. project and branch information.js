@@ -9,7 +9,7 @@
 const moment = require('moment');
 const os= require('os');
 
-var gitperf = require('../jetwaves/gitperf');
+var gitperf = require('../jetwaves/gitperfLib');
 let folderName = '/home/jetwaves/dev/__github/tp';           // CHANGE IT TO YOUR OWN GIT PROJECT'S FULL PATH
 
 (async function (){
