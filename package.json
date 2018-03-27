@@ -26,7 +26,7 @@
     "url": "https://github.com/jetwaves/team-performance/issues"
   },
   "bin": {
-    "gitperf": "./jetwaves/cli.js"
+    "gitperf": "./jetwaves/gitperf.js"
   },
   "homepage": "https://github.com/jetwaves/team-performance#readme",
   "dependencies": {
