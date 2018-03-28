@@ -287,6 +287,7 @@ getProjectInfo(folderName).then(function(projectInfo){
                 if(err){
                     console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
                     console.log('┏---- INFO: ----- start [whilst ERROR err @ ] -----');console.dir(err);console.log('┗---- INFO: -----  end  [err @ ] -----');
+                    reject(err);
                 }
                 authors = _.uniq(authors);          // eliminate duplication of users at every merge commit.
                 _.remove(historyArr, function(item){        // eliminate null items (due to cli param selection. )

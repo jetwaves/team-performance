@@ -11,7 +11,7 @@ const chalk   = require('chalk');
 const program   = require('commander');
 
 
-const gitperf = require('./gitperf');
+const gitperf = require('./gitperfLib');
 const pkg     = require('../package.json');
 
 
