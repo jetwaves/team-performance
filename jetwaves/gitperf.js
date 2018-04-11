@@ -125,13 +125,17 @@ let params = determinateParams(program);
 
 
 (async function (){
-    // params.project = ['/home/jetwaves/dev/__github/tp','/home/jetwaves/dev/__github/route-to-controller'];
-    // params.project = ['/home/jetwaves/dev/__github/tp'];
-    let info = await gitperf.getMultiProjectCommitSummary(params.project, params.branch, params.author, params.since, params.until);
-    // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-    // console.log('┏---- INFO: ----- start [info @ ] -----');console.dir(info);console.log('┗---- INFO: -----  end  [info @ ] -----');
-    log(gitperf.commitHistoryTableRedemption(info.commitHistory));
-    log(gitperf.authorsTableRedemption(info.authors));
+    try{
+        // params.project = ['/home/jetwaves/dev/__github/tp','/home/jetwaves/dev/__github/route-to-controller'];
+        // params.project = ['/home/jetwaves/dev/__github/tp'];
+        let info = await gitperf.getMultiProjectCommitSummary(params.project, params.branch, params.author, params.since, params.until);
+        // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+        // console.log('┏---- INFO: ----- start [info @ ] -----');console.dir(info);console.log('┗---- INFO: -----  end  [info @ ] -----');
+        log(gitperf.commitHistoryTableRedemption(info.commitHistory));
+        log(gitperf.authorsTableRedemption(info.authors));
+    }catch(err){
+        console.log('        gitperf cli   err = ');  console.dir(err);
+    }
 
 })();
 
@@ -199,66 +203,6 @@ function fileExist(fileFullName){
         return false;
     }
 }
-
-
-
-
-
-
-function showHelp(){
-    console.log('   ');
-    console.log('                                   ' + chalk.bold.green('team-performance') + '');
-    console.log('   ');
-
-    console.log(' Tool used to summarize team members` performance by analysing multi projects` git commit logs. ');
-    console.log('       Get more help with document at ' + chalk.green('https://github.com/jetwaves/team-performance/blob/master/README.md'));
-    console.log('   ');
-    console.log(chalk.blue('   - Command Format:'));
-    console.log('           $gitperf --project=projectPath --branch=branchName --author=UserName --since=YYYY-MM-DD --until=YYYY-MM-DD   ');
-    console.log('       or');
-    console.log('           $gitperf --config=path/to/config/gitperf.config --author=UserName --since=YYYY-MM-DD --until=YYYY-MM-DD   ');
-    console.log('   ');
-    console.log(chalk.blue('   - Content Format of Config file'));
-    console.log('       {                                       ');
-    console.log('           project:                            ');
-    console.log('               {                               ');
-    console.log('                   fullpath/to/project01,      ');
-    console.log('                   fullpath/to/project02,      ');
-    console.log('                   fullpath/to/project03       ');
-    console.log('               }                               ');
-    console.log('           branch:                             ');
-    console.log('               {                               ');
-    console.log('                   branchName01,               ');
-    console.log('                   branchName02,               ');
-    console.log('                   branchName03,               ');
-    console.log('               {                               ');
-    console.log('           author:                             ');
-    console.log('               {                               ');
-    console.log('                   author01,                   ');
-    console.log('                   author02,                   ');
-    console.log('                   author03,                   ');
-    console.log('               }                               ');
-    console.log('           since:  YYYY-MM-DD,                 ');
-    console.log('           until:  YYYY-MM-DD                  ');
-    console.log('       }                                       ');
-    console.log('   ');
-    console.log(chalk.blue('   - Param Description: '));
-    console.log('       --config         :  OPTIONAL  :  config file`s full name,                     , ( required when projectPath is not set ) ');
-    console.log('       --project        :  OPTIONAL  :  project folder path,     use `,` to separate , ( required when --config    is not set ) ');
-    console.log('       --branch         :  OPTIONAL  :  branch name to analyse , use `,` to separate  ');
-    console.log('       --author         :  OPTIONAL  :  author name to analyse , use `,` to separate  ');
-    console.log('       --since          :  OPTIONAL  :  start date of analyse                         ');
-    console.log('       --until          :  OPTIONAL  :  end date of analyse                           ');
-    console.log('   ');
-}
-
-
-
-
-
-
-
-
 
 
 

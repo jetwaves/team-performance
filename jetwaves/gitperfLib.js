@@ -56,7 +56,11 @@ function(resolve, reject){
                 setTimeout(function(){
                     // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss-SSS\t\t\t\t')+__filename);
                     let fileContent = fs.readFileSync(path.normalize(folderName + '//' + tempFileName));
-                    fileContent = fileContent.toString().split(os.EOL);
+                    if(fileContent){
+                        fileContent = fileContent.toString().split(os.EOL);
+                    } else {
+                        fileContent = [];
+                    }
                     // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
                     callback(null, fileContent);
                 },  500);
@@ -110,13 +114,16 @@ function makeGitLogCommandWithParams(folderName, branchName, author, since, unti
 
 
 function parseGitLog(logContent, branchName, projectName ){
+    if(logContent.length <=0 ) return;
     let res = [];
     let authors = [];
     let block = makeNewNullCommitBlock();
-
     for(let idx in logContent){
         let line = logContent[idx];
         let arr = undefined;
+        if(!line || line.trim() === '' || line.trim() == null || line.length === 0) {
+            continue;
+        }
         arr = line.split(' ');
 
         let substr = line.substr(0, 6);
@@ -236,7 +243,7 @@ function(resolve, reject){
         if (error !== null) {
             reject(stderr);
         }
-        let patt = /\/[a-zA-Z0-9-]{1,30}.git(?= \(fetch\))/;
+        let patt = /\/[a-zA-Z0-9-]{1,30}(?= \(fetch\))/;
         let regres = patt.exec(stdout);
         let projectName = regres.toString().substr(1);
         // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tprojectName  = '+projectName );
@@ -278,9 +285,11 @@ getProjectInfo(folderName).then(function(projectInfo){
                 getGitLog(folderName, oneBranch, author, since, until, projectName ).then(function( commitData){
                     historyArr = _.concat(historyArr, commitData.parseResult);
                     authors = _.concat(authors, commitData.authors);
-                    // historyArr.push(commitData.parseResult);
-                    // authors.push(commitData.authors);
                     callback(null, 'ok');
+                }).catch(function(getGitLogErr){
+                    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+                    console.log('┏---- INFO: ----- start [getGitLogErr @ ] -----');console.dir(getGitLogErr);console.log('┗---- INFO: -----  end  [getGitLogErr @ ] -----');
+                    callback(getGitLogErr, null);
                 })
             },
             function (err, n) {
@@ -304,9 +313,16 @@ getProjectInfo(folderName).then(function(projectInfo){
             }
         );
 
+    }).catch(function(getBranchInfoErr){
+        console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+        console.log('┏---- INFO: ----- start [getBranchInfoErr @ ] -----');console.dir(getBranchInfoErr);console.log('┗---- INFO: -----  end  [getBranchInfoErr @ ] -----');
+        reject(getBranchInfoErr);
     });
+}).catch(function(getProjectInfoErr){
+    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+    console.log('┏---- INFO: ----- start [getProjectInfoErr @ ] -----');console.dir(getProjectInfoErr);console.log('┗---- INFO: -----  end  [getProjectInfoErr @ ] -----');
+    reject(getProjectInfoErr);
 });
-
 })}
 
 
@@ -356,18 +372,21 @@ function(resolve, reject){
                 historyArr = _.concat(historyArr, oneProjectCommitInfo.commitHistory);
                 authors = _.concat(authors, oneProjectCommitInfo.authors);
                 callback(null, 'ok');
+            }).catch(function(getProjectCommitSummaryErr){
+                console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+                console.log('┏---- ERROR: ----- start [getProjectCommitSummaryErr @ ] -----');console.dir(getProjectCommitSummaryErr);console.log('┗---- ERROR: -----  end  [getProjectCommitSummaryErr @ ] -----');
+                callback(getProjectCommitSummaryErr, null);
             })
         },
-        function (err, n) {
-            if(err){
+        function (getMultiProjectCommitSummaryWhilstErr, n) {
+            if(getMultiProjectCommitSummaryWhilstErr){
                 console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-                console.log('┏---- INFO: ----- start [whilst ERROR err @ ] -----');console.dir(err);console.log('┗---- INFO: -----  end  [err @ ] -----');
-                reject(err);
+                console.log('┏---- ERROR: ----- start [getMultiProjectCommitSummaryWhilstErr @ ] -----');console.dir(getMultiProjectCommitSummaryWhilstErr);console.log('┗---- ERROR: -----  end  [getMultiProjectCommitSummaryWhilstErr @ ] -----');
+                reject(getMultiProjectCommitSummaryWhilstErr);
             }
             authors = _.uniq(authors);                              // eliminate duplication of users at every merge commit.
             historyArr = filterByBranch(historyArr, branchName);    // filter branches by cli params
             historyArr = filterByAuthor(historyArr, author);        // filter author   by cli params
-
             resolve({commitHistory: historyArr, authors: authors});
         }
     );

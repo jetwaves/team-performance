@@ -2,6 +2,9 @@
 
 "use strict";
 
+// test command
+//  ./gitperfToMongoDB.js -h localhost -u git -p 123456 -d gitperf -o test --project=/home/jetwaves/dev/__github/team-performance-viewer
+
 const moment  = require('moment');
 const os      = require('os');
 const log     = console.log;
@@ -42,50 +45,38 @@ program
     .option('--until <YYYY-MM-DD>', 'end date of analyse', validDate)
     .option('--config <items>', 'config file full name')
     .option('--branch <items>', 'branch names to summarize, separate by `,` ',filterList)
-    .option('--author <items>', 'author names to summarize, separate by `,` ',filterList)
+    .option('--author <items>', 'author names to summarize, separate by `,` ')
+    .option('-h, --host <items>', 'mongodb host name/ ip `,` ')
+    .option('--port <items>', 'mongodb service port`,` ')
+    .option('-d, --database <items>', 'mongodb database name`,` ')
+    .option('-u, --user <items>', 'mongodb user name`,` ')
+    .option('-p, --password <items>', 'mongodb password`,` ')
+    .option('-o, --collection <items>', 'mongodb collection/table`,` ')
     .parse(process.argv);
 
 let params = determinateParams(program);
-console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-console.log('┏---- INFO: ----- start [params @ ] -----');console.dir(params);console.log('┗---- INFO: -----  end  [params @ ] -----');
-
-
-
-
+// console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+// console.log('┏---- INFO: ----- start [params @ ] -----');console.dir(params);console.log('┗---- INFO: -----  end  [params @ ] -----');
 
 let dbConfig = {
-    host     : 'localhost',
-    port     : '27017',
-    user     : 'admin',
-    password : '123456',
-    db       : 'gitperf',
-    collection: 'logs'
+    host      : params.host,
+    port      : params.port     ,
+    user      : params.user     ,
+    password  : params.password ,
+    db        : params.database ,
+    collection: params.collection,
 
 };
 
-
-// (async function (){
-//     // params.project = ['/home/jetwaves/dev/__github/tp','/home/jetwaves/dev/__github/route-to-controller'];
-//     // params.project = ['/home/jetwaves/dev/__github/tp'];
-//     // let info = await gitperf.getMultiProjectCommitSummary(params.project, params.branch, params.author, params.since, params.until);
-//
-//     // log(gitperf.commitHistoryTableRedemption(info.commitHistory));
-//     // log(gitperf.authorsTableRedemption(info.authors));
-//
-//     let saveResult = await gitperfMongo.saveLogToMongodb(dbConfig, params.project, params.branch, params.author, params.since, params.until);
-//
-//     console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-//     console.log('┏---- INFO: ----- start [saveResult @ ] -----');console.dir(saveResult);console.log('┗---- INFO: -----  end  [saveResult @ ] -----');
-//
-//
-// })();
-
-
-gitperfMongo.saveLogToMongodb(dbConfig, params.project, params.branch, params.author, params.since, params.until).then(function(err, res){
+gitperfMongo.saveLogToMongodb(dbConfig, params.project, params.branch, params.author, params.since, params.until)
+    .then(function(err, res){
     console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
     console.log('┏---- INFO: ----- start [save res @ ] -----');console.dir(res);console.log('┗---- INFO: -----  end  [res @ ] -----');
 
     process.exit(0);
+}).catch(function(saveLogToMongodbErr){
+    console.log('           saveLogToMongodbErr  = ');  console.dir(saveLogToMongodbErr);
+
 });
 
 
@@ -137,6 +128,13 @@ function determinateParams(program){
     if(program.since) param.since    = program.since;
     if(program.until) param.until    = program.until;
     if(program.project) param.project = program.project;
+
+    if(program.host) param.host = program.host;
+    if(program.port) param.port = program.port;
+    if(program.user) param.user = program.user;
+    if(program.password) param.password = program.password;
+    if(program.database) param.database = program.database;
+    if(program.collection) param.collection = program.collection;
 
 
     return param;
