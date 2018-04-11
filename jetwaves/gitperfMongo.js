@@ -99,11 +99,12 @@ async function saveLogToMongodb(dbConfig, project, branch, author, since, until 
                 merge : item.merge
             };
             let ioRes = await insertOne(col, testItem);
+            addItemCnt = addItemCnt + 1;
         } else {
             // console.log('           existCnt  = ');  console.dir(existCnt);
         }
     }
-    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Item added Count =   ' + addItemCnt);
+    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Item added to MongoDB : Count =   ' + addItemCnt);
     return addItemCnt;
 
 

@@ -243,7 +243,7 @@ function(resolve, reject){
         if (error !== null) {
             reject(stderr);
         }
-        let patt = /\/[a-zA-Z0-9-]{1,30}(?= \(fetch\))/;
+        let patt = /\/[a-zA-Z0-9-.]{1,30}(?= \(fetch\))/;
         let regres = patt.exec(stdout);
         let projectName = regres.toString().substr(1);
         // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\tprojectName  = '+projectName );
@@ -281,6 +281,11 @@ getProjectInfo(folderName).then(function(projectInfo){
                 },
             function (callback) {
                 let oneBranch = branchData.branchList.pop();
+                if(branchName){
+                    if(branchName.indexOf(oneBranch) <0 ){
+                        return callback(null, 'pass branch');
+                    }
+                }
                 console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Summarizing branch :   ' + oneBranch);
                 getGitLog(folderName, oneBranch, author, since, until, projectName ).then(function( commitData){
                     historyArr = _.concat(historyArr, commitData.parseResult);
@@ -370,6 +375,10 @@ function(resolve, reject){
             console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Analysing Project :   ' + folderName);
             getProjectCommitSummary(folderName, branchName, author, since, until).then(function( oneProjectCommitInfo ){
                 historyArr = _.concat(historyArr, oneProjectCommitInfo.commitHistory);
+                // console.log('           historyArr  = ');  console.dir(historyArr);
+                if(historyArr){
+                    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);console.log('\tINFO:\t Found ' + historyArr.length + ' records for project');
+                }
                 authors = _.concat(authors, oneProjectCommitInfo.authors);
                 callback(null, 'ok');
             }).catch(function(getProjectCommitSummaryErr){

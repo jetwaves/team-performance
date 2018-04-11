@@ -70,8 +70,8 @@ let dbConfig = {
 
 gitperfMongo.saveLogToMongodb(dbConfig, params.project, params.branch, params.author, params.since, params.until)
     .then(function(err, res){
-    console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
-    console.log('┏---- INFO: ----- start [save res @ ] -----');console.dir(res);console.log('┗---- INFO: -----  end  [res @ ] -----');
+    // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss\t\t\t\t')+__filename);
+    // console.log('┏---- INFO: ----- start [save res @ ] -----');console.dir(res);console.log('┗---- INFO: -----  end  [res @ ] -----');
 
     process.exit(0);
 }).catch(function(saveLogToMongodbErr){
