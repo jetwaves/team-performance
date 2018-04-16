@@ -23,10 +23,12 @@ var tool = {
 function checkMongodbModule(){
     // check if the mongodb module is installed.
     try {
+        // console.log(require.resolve("mongodb"));
         console.log(require.resolve("mongodb"));
+        console.log(require.resolve("mongojs"));
     } catch(e) {
-        console.error(chalk.bgRed(' Save commit log To mongodb function requires mongodb module to be installed.'));
-        console.error(chalk.red('   Execute `npm install mongodb --save` to enable the function` '));
+        console.error(chalk.bgRed(' Save commit log To mongodb function requires mongodb and mongojs module to be installed.'));
+        console.error(chalk.red('   Execute `npm install mongodb mongojs --save` to enable the function` '));
         process.exit(e.code);
     }
 }

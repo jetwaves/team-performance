@@ -11,6 +11,7 @@ const _ = require('lodash');
 const os= require('os');
 
 const exec = require('child_process').exec;
+const execSync = require('child_process').execSync;
 
 const Table = require('cli-table-redemption');
 
@@ -39,31 +40,21 @@ function(resolve, reject){
 
     async.waterfall(
             [function(callback){            // Execute the git command to redirect git log to a temp file.
-                let ls = exec(command, function (error, stdout, stderr) {
-                    if (error !== null) {
-                        callback(error, null);
-                    }
-                    callback(null, stdout);
-                });
-            },
-            function(res1, callback){
-                // wait a while until the file is generated.
-                setTimeout(function(){
-                    callback(null, 'wait finish');
-                },  500);
+                let stdout = execSync(command);
+                callback(null, stdout);
             },
             function(res2, callback){
-                setTimeout(function(){
-                    // console.log("\r\n"+moment().format('Y/MM/DD HH:mm:ss-SSS\t\t\t\t')+__filename);
-                    let fileContent = fs.readFileSync(path.normalize(folderName + '//' + tempFileName));
-                    if(fileContent){
-                        fileContent = fileContent.toString().split(os.EOL);
-                    } else {
-                        fileContent = [];
-                    }
-                    // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
-                    callback(null, fileContent);
-                },  500);
+                let fileContent = fs.readFileSync(path.normalize(folderName + '//' + tempFileName));
+                if(fileContent){
+                    // fileContent = fileContent.toString().split(os.EOL);
+                    fileContent = fileContent.toString().split("\n");
+                    console.log('           fileContent.length  = ');  console.dir(fileContent.length);
+                } else {
+                    console.log('           filecontnet = null ');
+                    fileContent = [];
+                }
+                // console.log('┏---- INFO: ----- start [fileContent @ ] -----');console.dir(fileContent);console.log('┗---- INFO: -----  end  [fileContent @ ] -----');
+                callback(null, fileContent);
             },
             function(fileContent, callback){
                 fs.unlink(path.normalize(folderName + '//' + tempFileName),function(unlinkRes){});          // delete the temp file.
@@ -209,7 +200,9 @@ function(resolve, reject){
         if (error !== null) {
             reject(stderr);
         }
-        stdout = stdout.split(os.EOL);
+        // stdout = stdout.split(os.EOL);
+        stdout = stdout.split("\n");
+
         for(let idx in stdout){
             let line = stdout[idx].trim();
             if(!line) continue;
